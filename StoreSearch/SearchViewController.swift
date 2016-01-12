@@ -15,7 +15,8 @@ class SearchViewController: UIViewController {
     
     var searchResults = [SearchResult]()
     var hasSearched = false
-
+    var isLoading = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -26,6 +27,9 @@ class SearchViewController: UIViewController {
         
         cellNib = UINib(nibName: TableViewCellIdentifiers.nothingFoundCell, bundle: nil)
         tableView.registerNib(cellNib, forCellReuseIdentifier: TableViewCellIdentifiers.nothingFoundCell)
+        
+        cellNib = UINib(nibName: TableViewCellIdentifiers.loadingCell, bundle: nil)
+        tableView.registerNib(cellNib, forCellReuseIdentifier: TableViewCellIdentifiers.loadingCell)
         
         tableView.rowHeight = 80
     }
@@ -216,21 +220,34 @@ extension SearchViewController: UISearchBarDelegate {
             searchBar.resignFirstResponder()
             searchResults = [SearchResult]()
             
+            isLoading = true
+            tableView.reloadData()
+            
+            let queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)
+            
             hasSearched = true
             
-            let url = urlWithSearchText(searchBar.text!)
-            if let jsonString = performStoreSearchWithURL(url) {
-                if let dictionary = parseJSON(jsonString) {
-                    searchResults = parseDictionary(dictionary)
-                    
-                    searchResults.sortInPlace(<)
-                    
-                    tableView.reloadData()
-                    return
+            dispatch_async(queue) {
+                let url = self.urlWithSearchText(searchBar.text!)
+                if let jsonString = self.performStoreSearchWithURL(url) {
+                    if let dictionary = self.parseJSON(jsonString) {
+                        
+                        self.searchResults = self.parseDictionary(dictionary)
+                        self.searchResults.sortInPlace(<)
+                        
+                        dispatch_async(dispatch_get_main_queue()) {
+                            self.isLoading = false
+                            self.tableView.reloadData()
+                        }
+                        
+                        return
+                    }
+                }
+                
+                dispatch_async(dispatch_get_main_queue()) {
+                    self.showNetworkError()
                 }
             }
-            
-            showNetworkError()
         }
     }
     
@@ -258,7 +275,9 @@ extension SearchViewController: UITableViewDataSource {
     
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if !hasSearched {
+        if isLoading {
+            return 1
+        } else if !hasSearched {
             return 0
         } else if searchResults.count == 0 {
             return 1
@@ -268,7 +287,12 @@ extension SearchViewController: UITableViewDataSource {
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        if searchResults.count == 0 {
+        if isLoading {
+            let cell = tableView.dequeueReusableCellWithIdentifier(TableViewCellIdentifiers.loadingCell, forIndexPath:indexPath) as UITableViewCell
+            let spinner = cell.viewWithTag(100) as! UIActivityIndicatorView
+            spinner.startAnimating()
+            return cell
+        } else if searchResults.count == 0 {
             return tableView.dequeueReusableCellWithIdentifier(TableViewCellIdentifiers.nothingFoundCell, forIndexPath: indexPath) 
         } else {
             let cell = tableView.dequeueReusableCellWithIdentifier(TableViewCellIdentifiers.searchResultCell, forIndexPath: indexPath) as! SearchResultCell
@@ -290,5 +314,6 @@ extension SearchViewController: UITableViewDataSource {
 struct TableViewCellIdentifiers {
     static let searchResultCell = "SearchResultCell"
     static let nothingFoundCell = "NothingFoundCell"
+    static let loadingCell = "LoadingCell"
 }
 
