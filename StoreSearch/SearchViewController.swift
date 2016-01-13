@@ -140,22 +140,6 @@ class SearchViewController: UIViewController {
         presentViewController(alert, animated: true, completion: nil)
     }
     
-    func kindForDisplay(kind: String) -> String {
-        switch kind {
-        case "album": return "Album"
-        case "audiobook": return "Audio Book"
-        case "book": return "Book"
-        case "ebook": return "E-Book"
-        case "feature-movie": return "Movie"
-        case "music-video": return "Music Video"
-        case "podcast": return "Podcast"
-        case "software": return "App"
-        case "song": return "Song"
-        case "tv-episode": return "TV Episode"
-        default: return kind
-        }
-    }
-    
     func parseAudioBook(dictionary: [String: AnyObject]) -> SearchResult {
         let searchResult = SearchResult()
         searchResult.name = dictionary["collectionName"] as! String
@@ -212,6 +196,7 @@ class SearchViewController: UIViewController {
         }
         return searchResult
     }
+    
 }
 
 extension SearchViewController: UISearchBarDelegate {
@@ -315,14 +300,7 @@ extension SearchViewController: UITableViewDataSource {
             let cell = tableView.dequeueReusableCellWithIdentifier(TableViewCellIdentifiers.searchResultCell, forIndexPath: indexPath) as! SearchResultCell
             let searchResult = searchResults[indexPath.row]
             
-            if searchResult.artistName.isEmpty {
-                cell.artistNameLabel.text = "Unknown"
-            } else {
-                cell.artistNameLabel.text = String(format: "%@ (%@)", arguments: [searchResult.artistName, kindForDisplay(searchResult.kind)])
-            }
-        
-            cell.nameLabel.text = searchResult.name
-                
+            cell.configureForSearchResult(searchResult)                
             return cell
         }
     }
