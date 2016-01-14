@@ -58,8 +58,8 @@
             </tableViewCellContentView>
             <connections>
                 <outlet property="artistNameLabel" destination="7Fn-B9-Uyb" id="orM-b9-MtH"/>
-                <outlet property="artworkImageView" destination="Thb-8N-flK" id="h1i-ty-IRf"/>
-                <outlet property="nameLabel" destination="R0p-DM-8Y3" id="v60-9g-o48"/>
+                <outlet property="artworkImageView" destination="Thb-8N-flK" id="Ank-HB-BkH"/>
+                <outlet property="nameLabel" destination="R0p-DM-8Y3" id="BgM-IU-gzt"/>
             </connections>
             <point key="canvasLocation" x="795" y="544"/>
         </tableViewCell>
